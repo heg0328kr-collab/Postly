@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Postly.git</title>
+<title>Glass Board</title>
 <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@300;400;600&family=Pretendard:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -369,6 +369,63 @@
   ::-webkit-scrollbar { width:5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius:10px; }
+
+  /* ─── FAB ─── */
+  .fab {
+    position: fixed; bottom: 36px; right: 36px; z-index: 100;
+    width: 60px; height: 60px; border-radius: 50%;
+    background: linear-gradient(135deg, rgba(99,131,255,0.9), rgba(168,85,247,0.9));
+    border: 1px solid rgba(255,255,255,0.25);
+    box-shadow: 0 8px 32px rgba(99,131,255,0.4), 0 1px 0 rgba(255,255,255,0.25) inset;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; color: #fff;
+    transition: all 0.35s cubic-bezier(0.22,1,0.36,1);
+  }
+  .fab:hover { transform: scale(1.12) rotate(15deg); box-shadow: 0 12px 40px rgba(99,131,255,0.55); }
+  .fab:active { transform: scale(0.95); }
+  .fab.open { transform: rotate(45deg); background: linear-gradient(135deg, rgba(255,80,80,0.85), rgba(200,60,180,0.85)); }
+
+  /* ─── Modal overlay ─── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 90;
+    background: rgba(0,0,0,0.45);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.35s cubic-bezier(0.22,1,0.36,1);
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+
+  /* ─── Modal card ─── */
+  .modal-card {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 95;
+    background: rgba(18,18,40,0.82);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-bottom: none;
+    border-radius: 28px 28px 0 0;
+    backdrop-filter: blur(36px);
+    -webkit-backdrop-filter: blur(36px);
+    box-shadow: 0 -8px 48px rgba(0,0,0,0.4), 0 2px 0 rgba(255,255,255,0.12) inset;
+    padding: 12px 28px 48px;
+    transform: translateY(110%);
+    transition: transform 0.45s cubic-bezier(0.22,1,0.36,1);
+  }
+  .modal-card.show { transform: translateY(0); }
+
+  .modal-handle {
+    width: 40px; height: 4px; border-radius: 2px;
+    background: rgba(255,255,255,0.2);
+    margin: 0 auto 20px;
+  }
+  .modal-title {
+    font-size: 18px; font-weight: 500; color: var(--text-primary);
+    margin-bottom: 20px; display: flex; align-items: center; gap: 8px;
+  }
+  .modal-title::before { content:''; display:block; width:3px; height:18px; border-radius:2px; background: linear-gradient(to bottom, var(--accent), var(--accent2)); }
+
 </style>
 </head>
 <body>
@@ -389,9 +446,13 @@
     <p class="subtitle">당신의 생각이 여기 흐릅니다</p>
   </header>
 
-  <!-- Write form -->
-  <div class="glass write-card">
-    <div class="write-header">새 글 작성</div>
+  <!-- Modal overlay -->
+  <div class="modal-overlay" id="modal-overlay" onclick="closeModal()"></div>
+
+  <!-- Write modal -->
+  <div class="modal-card" id="modal-card">
+    <div class="modal-handle"></div>
+    <div class="modal-title">새 글 작성</div>
     <div class="row">
       <div class="field-wrap">
         <input class="glass-input" id="inp-name" type="text" placeholder="이름 (닉네임)" maxlength="20">
@@ -405,6 +466,9 @@
     </div>
     <button class="btn-submit" onclick="submitPost()">✦ 게시하기</button>
   </div>
+
+  <!-- FAB -->
+  <button class="fab" id="fab" onclick="toggleModal()">+</button>
 
   <!-- Posts -->
   <div class="posts-section">
@@ -572,6 +636,7 @@
       document.getElementById('inp-title').value = '';
       document.getElementById('inp-body').value = '';
       showToast('✦ 게시물이 등록되었습니다');
+      closeModal();
       loadPosts();
     } catch(e) { showToast('오류가 발생했습니다'); console.error(e); }
   };
@@ -599,8 +664,31 @@
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) window.submitPost();
   });
 
+
+  function toggleModal() {
+    const fab = document.getElementById('fab');
+    const card = document.getElementById('modal-card');
+    const overlay = document.getElementById('modal-overlay');
+    const isOpen = card.classList.contains('show');
+    if (isOpen) {
+      closeModal();
+    } else {
+      fab.classList.add('open');
+      card.classList.add('show');
+      overlay.classList.add('show');
+      setTimeout(() => document.getElementById('inp-name').focus(), 400);
+    }
+  }
+
+  function closeModal() {
+    document.getElementById('fab').classList.remove('open');
+    document.getElementById('modal-card').classList.remove('show');
+    document.getElementById('modal-overlay').classList.remove('show');
+  }
+
   loadPosts();
   setInterval(loadPosts, 5000);
 </script>
 </body>
 </html>
+    
