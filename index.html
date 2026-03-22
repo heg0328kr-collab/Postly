@@ -441,8 +441,8 @@
 <div class="container">
   <!-- Header -->
   <header>
-    <div class="logo-pill"><span></span>Liquid Glass Board</div>
-    <h1>무엇이든<br>남겨보세요</h1>
+    <div class="logo-pill"><span></span>Post.ly</div>
+    <h1>Post.ly</h1>
     <p class="subtitle">당신의 생각이 여기 흐릅니다</p>
   </header>
 
@@ -652,6 +652,9 @@
   }
 
   async function deletePost(id) {
+    const pin = prompt('관리자 번호를 입력하세요');
+    if (pin === null) return;
+    if (pin !== '0328') { showToast('❌ 관리자 번호가 틀렸습니다'); return; }
     try {
       await fsDelete(id);
       showToast('삭제되었습니다');
