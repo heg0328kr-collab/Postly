@@ -426,6 +426,56 @@
   }
   .modal-title::before { content:''; display:block; width:3px; height:18px; border-radius:2px; background: linear-gradient(to bottom, var(--accent), var(--accent2)); }
 
+
+  /* ─── Image upload ─── */
+  .img-upload-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.07);
+    border: 1px dashed rgba(255,255,255,0.25);
+    border-radius: 12px;
+    padding: 10px 16px;
+    color: var(--text-secondary);
+    font-size: 13px; cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.22,1,0.36,1);
+    width: 100%; justify-content: center;
+    margin-bottom: 14px;
+  }
+  .img-upload-btn:hover {
+    background: rgba(255,255,255,0.11);
+    border-color: rgba(120,180,255,0.4);
+    color: var(--text-primary);
+  }
+  #img-input { display: none; }
+
+  .img-preview-wrap {
+    position: relative; margin-bottom: 14px;
+    border-radius: 14px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .img-preview-wrap img {
+    width: 100%; max-height: 220px;
+    object-fit: cover; display: block;
+  }
+  .img-remove-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: rgba(0,0,0,0.55);
+    border: none; border-radius: 50%;
+    width: 28px; height: 28px;
+    color: #fff; font-size: 14px;
+    cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(8px);
+    transition: background 0.2s;
+  }
+  .img-remove-btn:hover { background: rgba(255,60,60,0.7); }
+
+  .post-image {
+    width: 100%; border-radius: 12px;
+    margin-top: 12px; max-height: 300px;
+    object-fit: cover; display: block;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
 </style>
 </head>
 <body>
@@ -464,6 +514,12 @@
     <div class="field-wrap">
       <textarea class="glass-textarea" id="inp-body" placeholder="내용을 입력하세요…" maxlength="500"></textarea>
     </div>
+    <input type="file" id="img-input" accept="image/*" onchange="previewImage(event)">
+    <div id="img-preview-wrap" class="img-preview-wrap" style="display:none">
+      <img id="img-preview" src="" alt="preview">
+      <button class="img-remove-btn" onclick="removeImage()">✕</button>
+    </div>
+    <label for="img-input" class="img-upload-btn" id="img-upload-label">📷 이미지 첨부</label>
     <button class="btn-submit" onclick="submitPost()">✦ 게시하기</button>
   </div>
 
@@ -507,6 +563,7 @@
           body:  f.body?.stringValue  || '',
           ts:    Number(f.ts?.integerValue || f.ts?.doubleValue || 0),
           likes: Number(f.likes?.integerValue || 0),
+          image: f.image?.stringValue || '',
           liked: false
         };
       }).sort((a,b) => b.ts - a.ts);
@@ -523,7 +580,8 @@
         title: { stringValue: post.title },
         body:  { stringValue: post.body },
         ts:    { integerValue: String(post.ts) },
-        likes: { integerValue: "0" }
+        likes: { integerValue: "0" },
+        image: { stringValue: post.image || '' }
       }})
     });
   }
@@ -600,6 +658,7 @@
         </div>
         <div class="post-title-text">${escHtml(p.title)}</div>
         <div class="post-body">${escHtml(p.body).replace(/\n/g,'<br>')}</div>
+        ${p.image ? `<img class="post-image" src="${p.image}" alt="첨부 이미지">` : ''}
         <div class="post-footer">
           <button class="reaction-btn ${p.liked?'liked':''}" data-like="${p.id}">
             ${p.liked?'♥':'♡'} ${p.likes}
@@ -632,10 +691,11 @@
     if (!title) { showToast('제목을 입력해주세요'); return; }
     if (!body)  { showToast('내용을 입력해주세요'); return; }
     try {
-      await fsAdd({ name, title, body, ts: Date.now() });
+      await fsAdd({ name, title, body, ts: Date.now(), image: selectedImageBase64 || '' });
       document.getElementById('inp-title').value = '';
       document.getElementById('inp-body').value = '';
       showToast('✦ 게시물이 등록되었습니다');
+      removeImage();
       closeModal();
       loadPosts();
     } catch(e) { showToast('오류가 발생했습니다'); console.error(e); }
@@ -689,9 +749,32 @@
     document.getElementById('modal-overlay').classList.remove('show');
   }
 
+
+  let selectedImageBase64 = null;
+
+  function previewImage(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) { showToast('❌ 이미지는 500KB 이하만 가능해요'); return; }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      selectedImageBase64 = ev.target.result;
+      document.getElementById('img-preview').src = selectedImageBase64;
+      document.getElementById('img-preview-wrap').style.display = 'block';
+      document.getElementById('img-upload-label').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeImage() {
+    selectedImageBase64 = null;
+    document.getElementById('img-input').value = '';
+    document.getElementById('img-preview-wrap').style.display = 'none';
+    document.getElementById('img-upload-label').style.display = 'flex';
+  }
+
   loadPosts();
   setInterval(loadPosts, 5000);
 </script>
 </body>
 </html>
-    
